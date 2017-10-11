@@ -2,6 +2,10 @@ require 'rspotify'
 class SpotifyPlaylistFromText
   def initialize(text, spotify_user, refresh_token, spotify_key, spotify_secret)
     @text = text
+    @spotify_user = spotify_user
+    @refresh_token = refresh_token
+    @spotify_key = spotify_key
+    @spotify_secret = spotify_secret
   end
   def text
     @text
@@ -43,11 +47,13 @@ class SpotifyPlaylistFromText
           spotify_uris << exact_matches[0].uri
           words = words.drop(2)
         else
-          if ["a","and","at","is","in","are","to","by","as","your","for"].include?(words[0].strip.downcase) == false
+          if ["a","and","at","is","in","are","to","by","as","your","for","of","be"].include?(words[0].strip.downcase) == false
             tracks = RSpotify::Track.search("track:#{words[0]}").sort_by { |track| track.name.length }
-            exact_matches = tracks.select { |track|  track.name.downcase == words[0].downcase }
-            result = exact_matches.count == 0 ? tracks[0].uri : exact_matches[0].uri
-            spotify_uris << result
+            if tracks.count > 0
+              exact_matches = tracks.select { |track|  track.name.downcase == words[0].downcase }
+              result = exact_matches.count == 0 ? tracks[0].uri : exact_matches[0].uri
+              spotify_uris << result
+            end
           end
           words = words.drop(1)
         end

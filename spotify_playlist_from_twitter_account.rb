@@ -46,4 +46,15 @@ class SpotifyPlaylistFromTwitterAccount
       end
     end
   end
+
+  def last_tweets
+    puts "getting recent tweets"
+    original_id = @client.user(@source_account).id
+    @client.user_timeline(@source_account)[0..2].each do |object|
+      if object.is_a?(Twitter::Tweet) && object.user.id == original_id && object.to_h[:retweeted_status] == nil
+        puts object.text
+        tweet_to_playlist(object.text)
+      end
+    end
+  end
 end
