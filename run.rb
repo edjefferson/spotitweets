@@ -10,6 +10,6 @@ session = SpotifyPlaylistFromTwitterAccount.new(ENV["SOURCE_ACCOUNT"],
                                                 ENV["REFRESH_TOKEN"],
                                                 ENV["SPOTIFY_KEY"],
                                                 ENV["SPOTIFY_SECRET"])
-session.last_tweets
+#session.last_tweets
 
 session.wait_for_tweets
