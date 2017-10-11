@@ -47,7 +47,7 @@ class SpotifyPlaylistFromText
           spotify_uris << exact_matches[0].uri
           words = words.drop(2)
         else
-          if ["a","and","at","is","in","are","to","by","as","your","for","of","be"].include?(words[0].strip.downcase) == false
+          if ["a","and","at","is","in","are","to","by","as","your","for","of","be","with"].include?(words[0].strip.downcase) == false
             tracks = RSpotify::Track.search("track:#{words[0]}").sort_by { |track| track.name.length }
             if tracks.count > 0
               exact_matches = tracks.select { |track|  track.name.downcase == words[0].downcase }
