@@ -2,7 +2,7 @@ require 'twitter'
 require './spotify_playlist_from_text'
 
 class SpotifyPlaylistFromTwitterAccount
-  def init(source_account, key, secret, access_token, access_secret, spotify_user, refresh_token, spotify_key, spotify_secret)
+  def initialize(source_account, key, secret, access_token, access_secret, spotify_user, refresh_token, spotify_key, spotify_secret)
     @client = Twitter::REST::Client.new do |config|
       config.consumer_key        = key
       config.consumer_secret     = secret
@@ -40,7 +40,7 @@ class SpotifyPlaylistFromTwitterAccount
     puts "waiting for tweets"
     original_id = @client.user(@source_account).id
     @stream.filter(follow:"#{original_id}") do |object|
-      if object.is_a?(Twitter::Tweet) && object.user.id == original_id && object.to_h[:retweeted_status] == nil 
+      if object.is_a?(Twitter::Tweet) && object.user.id == original_id && object.to_h[:retweeted_status] == nil
         puts object.text
         tweet_to_playlist(object.text)
       end

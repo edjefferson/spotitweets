@@ -1,10 +1,13 @@
-session = SpotifyPlaylistFromTwitterAccount.new(ENV["source_account"],
-                                                ENV["key"],
-                                                ENV["secret"],
-                                                ENV["access_token"],
-                                                ENV["access_secret"],
-                                                ENV["spotify_user"],
-                                                ENV["refresh_token"],
-                                                ENV["spotify_key"],
-                                                ENV["spotify_secret"])
-sesson.wait_for_tweets
+require './spotify_playlist_from_twitter_account'
+
+
+session = SpotifyPlaylistFromTwitterAccount.new(ENV["SOURCE_ACCOUNT"],
+                                                ENV["KEY"],
+                                                ENV["SECRET"],
+                                                ENV["ACCESS_TOKEN"],
+                                                ENV["ACCESS_SECRET"],
+                                                ENV["SPOTIFY_USER"],
+                                                ENV["REFRESH_TOKEN"],
+                                                ENV["SPOTIFY_KEY"],
+                                                ENV["SPOTIFY_SECRET"])
+session.wait_for_tweets
