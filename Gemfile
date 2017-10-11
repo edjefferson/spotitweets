@@ -1,0 +1,2 @@
+gem 'rspotify'
+gem 'twitter'
