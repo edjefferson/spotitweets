@@ -8,7 +8,7 @@ class SpotifyPlaylistFromText
     @spotify_user = spotify_user
     @spotify_key = spotify_key
     @spotify_secret = spotify_secret
-    @access_token = get_access_token(refresh_token,"http://localhost:8082/")
+    @access_token = get_access_token(refresh_token)
   end
 
   def text
