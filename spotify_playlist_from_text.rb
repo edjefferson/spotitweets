@@ -172,12 +172,10 @@ class SpotifyPlaylistFromText
   def search_spotify_tracks(query)
     formatted_query = query.gsub(" ","%20").downcase
     if formatted_query.to_s != ""
-      limit = 50
-      offset = 0
-      market = "GB"
-      type = "track"
+      options = {limit: 50, offset: 0, market: "GB", type: "track"}
+
       body = nil
-      uri = "https://api.spotify.com/v1/search/?q=track:#{formatted_query}&limit=#{limit}&offset=#{offset}&type=#{type}&market=#{market}"
+      uri = "https://api.spotify.com/v1/search/?q=track:#{formatted_query}&limit=#{options[:limit]}&offset=#{options[:offset]}&type=#{options[:type]}&market=#{options[:market]}"
       response = spotify_api_request(uri, body, "get")
       puts JSON.parse(response.body)["tracks"]["items"].count
       return JSON.parse(response.body)["tracks"]["items"]

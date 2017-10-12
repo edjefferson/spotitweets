@@ -23,31 +23,40 @@ class SpotifyPlaylistFromTwitterAccount
     @spotify_secret = spotify_secret
   end
 
-  def tweet_to_playlist(tweet)
-    spotify_playlist_from_text = SpotifyPlaylistFromText.new(tweet, @spotify_user, @refresh_token, @spotify_key, @spotify_secret)
-    playlist = spotify_playlist_from_text.spotify_playlist_build
+  def tweet_text(playlist[:original_text])
     if playlist[:original_text].include?('http')
       tweet_text = playlist[:original_text].split("http")[0][0..91] + " http" + playlist[:original_text].split("http")[1]
     else
       tweet_text = playlist[:original_text].split("http")[0][0..110]
     end
-    tweet = tweet_text + " " + playlist[:url]
+  end
+
+  def tweet_to_playlist(tweet)
+    spotify_playlist_from_text = SpotifyPlaylistFromText.new(tweet, @spotify_user, @refresh_token, @spotify_key, @spotify_secret)
+    playlist = spotify_playlist_from_text.spotify_playlist_build
+    tweet = tweet_text(playlist[:original_text]) + " " + playlist[:url]
     puts tweet
     @client.update(tweet)
+  end
+
+  def if_tweet(source_user_id, tweet)
+    if object.is_a?(Twitter::Tweet) && object.user.id == original_id && object.to_h[:retweeted_status] == nil
+      puts object.text
+      tweet_to_playlist(object.text)
+      puts "waiting for tweets"
+    end
+  end
+
+  def start_streaming
+    original_id = @client.user(@source_account).id
+    @stream.filter(follow:"#{original_id}") { |object| if_tweet(original_id, object) }
   end
 
   def wait_for_tweets
     while true do
       begin
         puts "waiting for tweets"
-        original_id = @client.user(@source_account).id
-        @stream.filter(follow:"#{original_id}") do |object|
-          if object.is_a?(Twitter::Tweet) && object.user.id == original_id && object.to_h[:retweeted_status] == nil
-            puts object.text
-            tweet_to_playlist(object.text)
-            puts "waiting for tweets"
-          end
-        end
+        start_streaming
       rescue Exception => e
         puts e.backtrace
         raise
@@ -55,14 +64,10 @@ class SpotifyPlaylistFromTwitterAccount
     end
   end
 
+
   def last_tweets
     puts "getting recent tweets"
     original_id = @client.user(@source_account).id
-    @client.user_timeline(@source_account)[0..1].each do |object|
-      if object.is_a?(Twitter::Tweet) && object.user.id == original_id && object.to_h[:retweeted_status] == nil
-        puts object.text
-        tweet_to_playlist(object.text)
-      end
-    end
+    @client.user_timeline(@source_account)[0..1].each { |object| if_tweet(original_id, object) }
   end
 end
