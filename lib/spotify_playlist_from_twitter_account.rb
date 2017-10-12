@@ -1,5 +1,5 @@
 require 'twitter'
-require './spotify_playlist_from_text'
+require './lib/spotify_playlist_from_text'
 
 class SpotifyPlaylistFromTwitterAccount
   def initialize(source_account, key, secret, access_token, access_secret, spotify_user, refresh_token, spotify_key, spotify_secret)

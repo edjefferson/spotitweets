@@ -1,4 +1,4 @@
-require './spotify_playlist_from_twitter_account'
+require './lib/spotify_playlist_from_twitter_account'
 
 
 session = SpotifyPlaylistFromTwitterAccount.new(ENV["SOURCE_ACCOUNT"],

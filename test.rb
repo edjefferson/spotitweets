@@ -1,4 +1,4 @@
-require './spotify_playlist_from_text'
+require './lib/spotify_playlist_from_twitter_account'
 
 text = ARGV[0]
 
