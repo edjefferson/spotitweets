@@ -84,8 +84,6 @@ class SpotifyPlaylistFromText
 
   def get_spotify_tracks
     words = self.text.gsub(/[^ \w\-]+/, "").split("http")[0].split(" ")
-    puts self.text
-    puts words.count
     @spotify_uris = []
     x = 5
     x = words.count if words.count < 5
@@ -97,7 +95,6 @@ class SpotifyPlaylistFromText
       end
       words = search[:remaining_words]
       x = search[:x]
-
     end
     return @spotify_uris
   end
@@ -113,7 +110,7 @@ class SpotifyPlaylistFromText
   def get_refresh_token
     redirect_uri = "http://localhost:8082/"
     step_one = RestClient.get 'https://accounts.spotify.com/authorize/', {params: {:client_id => @spotify_key, :redirect_uri => redirect_uri, :response_type => 'code', :scope => "playlist-modify-private playlist-modify-public playlist-read-private"} }
-    puts step_one.request.url
+    puts "Paste this into browser, paste redirect back here:\n #{step_one.request.url}"
     code = gets.split("=")[1][0..-2]
     puts code
     begin
@@ -121,7 +118,7 @@ class SpotifyPlaylistFromText
     rescue RestClient::ExceptionWithResponse => e
       puts  e.response
     end
-    puts step_four
+    return response
   end
 
 
