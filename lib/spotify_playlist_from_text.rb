@@ -77,7 +77,7 @@ class SpotifyPlaylistFromText
   end
 
   def get_spotify_tracks
-    words = self.text.gsub(/[^ \w\-]+/, "").split("http")[0].split(" ")
+    words = self.text.gsub("_"," ").gsub(/[^ \w\-]+/, "").split("http")[0].split(" ")
     @spotify_uris = []
     x = 5
     x = words.count if words.count < 5
