@@ -3,7 +3,8 @@ require './lib/spotify_api_connection'
 class SpotifyPlaylistFromText
   def initialize(text, spotify_user, refresh_token, spotify_key, spotify_secret)
     @spotifyapi = SpotifyApiConnection.new(spotify_user, refresh_token, spotify_key, spotify_secret)
-    @spotify_user
+    puts @spotifyapi.inspect
+    @spotify_user = spotify_user
     @text = text
   end
 
@@ -12,7 +13,7 @@ class SpotifyPlaylistFromText
   end
 
   def exclusion_list
-    ["a","and","at","is","in","are","to","by","as","your","for","of","be","with","was"]
+    ["a","and","at","is","in","are","to","by","as","your","for","of","be","with","was","the"]
   end
 
   def search_results(search_term)
@@ -45,14 +46,14 @@ class SpotifyPlaylistFromText
 
   def get_best_fit(tracks, search_term)
     while true do
-      term_at_start = tracks.select {|track| track["name"].downcase.start_with?(search_term.downcase) }
+      term_at_start = tracks.select {|track| track["name"].gsub(/[^ \w\-]+/, "").downcase.start_with?(search_term.downcase) }
       puts search_term
       if term_at_start.count > 0
         best_fit = term_at_start[0]
         break
       end
 
-      term_included = tracks.select {|track| track["name"].downcase.include?(search_term.downcase) }
+      term_included = tracks.select {|track| track["name"].gsub(/[^ \w\-]+/, "").downcase.include?(search_term.downcase) }
       if term_included.count > 0
         best_fit = term_included[0]
         break
@@ -91,6 +92,7 @@ class SpotifyPlaylistFromText
   def spotify_playlist_build
     spotify_uris = get_spotify_tracks
     playlist_uri = @spotifyapi.create_spotify_playlist(@spotify_user, self.text, true)
+
     @spotifyapi.replace_spotify_playlist(@spotify_user, playlist_uri, spotify_uris)
     url = "https://open.spotify.com/user/#{@spotify_user}/playlist/#{playlist_uri}"
     return {original_text: self.text,url: url}

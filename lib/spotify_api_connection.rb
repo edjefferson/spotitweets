@@ -83,15 +83,13 @@ class SpotifyApiConnection
   end
 
 
-  def create_spotify_playlist(user_name, playlist_name, public)
+  def create_spotify_playlist(user_name, playlist_name, public_status)
     uri = "https://api.spotify.com/v1/users/#{user_name}/playlists"
     body = {
         "name" => playlist_name,
-        "public" => public
+        "public" => public_status
       }
     response = spotify_api_request(uri, body, "post")
-
-
     return JSON.parse(response.body)["uri"].to_s.split(":")[4]
   end
 
@@ -103,7 +101,6 @@ class SpotifyApiConnection
       body = nil
       uri = "https://api.spotify.com/v1/search/?q=track:#{formatted_query}&limit=#{options[:limit]}&offset=#{options[:offset]}&type=#{options[:type]}&market=#{options[:market]}"
       response = spotify_api_request(uri, body, "get")
-      puts JSON.parse(response.body)["tracks"]["items"].count
       return JSON.parse(response.body)["tracks"]["items"]
     end
   end
