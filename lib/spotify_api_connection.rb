@@ -40,7 +40,7 @@ class SpotifyApiConnection
     code = gets.split("=")[1][0..-2]
     puts code
     begin
-      step_four = RestClient.post 'https://accounts.spotify.com/api/token', {:client_id => @spotify_key, :client_secret => @spotify_secret, grant_type: 'authorization_code', code: code, redirect_uri: redirect_uri }
+      response = RestClient.post 'https://accounts.spotify.com/api/token', {:client_id => @spotify_key, :client_secret => @spotify_secret, grant_type: 'authorization_code', code: code, redirect_uri: redirect_uri }
     rescue RestClient::ExceptionWithResponse => e
       puts  e.response
     end
@@ -69,6 +69,7 @@ class SpotifyApiConnection
     response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
       http.request(request)
     end
+    return response
   end
 
   def replace_spotify_playlist(user_name, playlist_uri, tracks)

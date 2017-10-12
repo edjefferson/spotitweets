@@ -2,8 +2,10 @@ require './lib/spotify_api_connection'
 
 class SpotifyPlaylistFromText
   def initialize(text, spotify_user, refresh_token, spotify_key, spotify_secret)
-    @spotifyapi = SpotifyApiConnection.new(spotify_user, refresh_token, spotify_key, spotify_secret)
-    puts @spotifyapi.inspect
+    if refresh_token != nil
+      @spotifyapi = SpotifyApiConnection.new(spotify_user, refresh_token, spotify_key, spotify_secret)
+    end
+
     @spotify_user = spotify_user
     @text = text
   end
@@ -47,7 +49,6 @@ class SpotifyPlaylistFromText
   def get_best_fit(tracks, search_term)
     while true do
       term_at_start = tracks.select {|track| track["name"].gsub(/[^ \w\-]+/, "").downcase.start_with?(search_term.downcase) }
-      puts search_term
       if term_at_start.count > 0
         best_fit = term_at_start[0]
         break
@@ -60,7 +61,6 @@ class SpotifyPlaylistFromText
       end
       best_fit = tracks[0]
     end
-    puts best_fit["name"]
     return best_fit
   end
 
