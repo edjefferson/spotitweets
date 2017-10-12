@@ -48,6 +48,7 @@ class SpotifyPlaylistFromTwitterAccount
   end
 
   def start_streaming
+    @client.update_profile(description:"News Headlines As Spotify Playlists. Currently listening to @#{@source_account}")
     original_id = @client.user(@source_account).id
     @stream.filter(follow:"#{original_id}") { |object| if_tweet(original_id, object) }
   end

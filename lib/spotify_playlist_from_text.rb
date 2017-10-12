@@ -13,7 +13,7 @@ class SpotifyPlaylistFromText
   end
 
   def exclusion_list
-    ["a","and","at","is","in","are","to","by","as","your","for","of","be","with","was","the"]
+    ["a","and","at","is","in","are","to","by","as","your","for","of","be","with","was","the","i"]
   end
 
   def search_results(search_term)
@@ -93,7 +93,7 @@ class SpotifyPlaylistFromText
     spotify_uris = get_spotify_tracks
     playlist_uri = @spotifyapi.create_spotify_playlist(@spotify_user, self.text, true)
 
-    @spotifyapi.replace_spotify_playlist(@spotify_user, playlist_uri, spotify_uris)
+    @spotifyapi.add_tracks_to_spotify_playlist(@spotify_user, playlist_uri, spotify_uris)
     url = "https://open.spotify.com/user/#{@spotify_user}/playlist/#{playlist_uri}"
     return {original_text: self.text,url: url}
   end

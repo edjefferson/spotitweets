@@ -73,20 +73,26 @@ class SpotifyApiConnection
 
   def replace_spotify_playlist(user_name, playlist_uri, tracks)
     uri = "https://api.spotify.com/v1/users/#{user_name}/playlists/#{playlist_uri}/tracks"
-    body = {
-        "uris" => tracks
-      }
-
+    body = { "uris" => tracks}
     response = spotify_api_request(uri, body, "put")
-
     return JSON.parse(response.body)["uri"]
   end
+
+  def add_tracks_to_spotify_playlist(user_name, playlist_uri, tracks)
+    uri = "https://api.spotify.com/v1/users/#{user_name}/playlists/#{playlist_uri}/tracks"
+    tracks.each_slice(100) do |batch|
+      body = { "uris" => tracks}
+      response = spotify_api_request(uri, body, "post")
+      return JSON.parse(response.body)["uri"]
+    end
+  end
+
 
 
   def create_spotify_playlist(user_name, playlist_name, public_status)
     uri = "https://api.spotify.com/v1/users/#{user_name}/playlists"
     body = {
-        "name" => playlist_name,
+        "name" => playlist_name[0..120],
         "public" => public_status
       }
     response = spotify_api_request(uri, body, "post")
@@ -104,4 +110,6 @@ class SpotifyApiConnection
       return JSON.parse(response.body)["tracks"]["items"]
     end
   end
+
+
 end
