@@ -16,8 +16,14 @@ class TestSpotifyPlaylistFromText < Minitest::Test
       {"name" => "Big Egg"},
       {"name" => "Bug Big"}
     ]
+    tracks_three  = [{"name" => "Big Bug" },
+      {"name" => "Bug Big"}
+    ]
+    tracks_four = []
     assert_equal spotify_playlist_from_text.get_best_fit(tracks_one,search_term), {"name" => "Egg Big"}
     assert_equal spotify_playlist_from_text.get_best_fit(tracks_two,search_term), {"name" => "Big Egg"}
+    assert_equal spotify_playlist_from_text.get_best_fit(tracks_three,search_term), {"name" => "Big Bug"}
+    assert_nil spotify_playlist_from_text.get_best_fit(tracks_four,search_term)
   end
 
 end

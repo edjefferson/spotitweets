@@ -60,9 +60,7 @@ class SpotifyPlaylistFromText
         break
       end
       best_fit = tracks[0]
-      if best_fit == nil
-        break
-      end
+      break
     end
     return best_fit
   end
