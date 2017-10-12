@@ -23,11 +23,11 @@ class SpotifyPlaylistFromTwitterAccount
     @spotify_secret = spotify_secret
   end
 
-  def tweet_text(playlist[:original_text])
-    if playlist[:original_text].include?('http')
-      tweet_text = playlist[:original_text].split("http")[0][0..91] + " http" + playlist[:original_text].split("http")[1]
+  def tweet_text(original_text)
+    if original_text.include?('http')
+      return original_text.split("http")[0][0..91] + " http" + original_text.split("http")[1]
     else
-      tweet_text = playlist[:original_text].split("http")[0][0..110]
+      return original_text.split("http")[0][0..110]
     end
   end
 
