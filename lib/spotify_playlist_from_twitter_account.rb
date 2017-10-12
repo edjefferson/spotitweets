@@ -65,7 +65,6 @@ class SpotifyPlaylistFromTwitterAccount
     end
   end
 
-
   def last_tweets
     puts "getting recent tweets"
     original_id = @client.user(@source_account).id
