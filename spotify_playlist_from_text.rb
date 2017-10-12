@@ -1,90 +1,26 @@
-require 'rspotify'
+require 'base64'
+require 'net/http'
+require 'json'
+
 class SpotifyPlaylistFromText
   def initialize(text, spotify_user, refresh_token, spotify_key, spotify_secret)
     @text = text
     @spotify_user = spotify_user
-    @refresh_token = refresh_token
     @spotify_key = spotify_key
     @spotify_secret = spotify_secret
+    @access_token = get_access_token(refresh_token)
   end
+
   def text
     @text
   end
 
-  def spotify_user
-    @spotify_user
+  def exclusion_list
+    ["a","and","at","is","in","are","to","by","as","your","for","of","be","with","was"]
   end
 
-  def refresh_token
-    @refresh_token
-  end
-
-  def spotify_key
-    @spotify_key
-  end
-
-  def spotify_secret
-    @spotify_secret
-  end
-
-  def spotify_playlist_build
-    RSpotify.authenticate(self.spotify_key, self.spotify_secret)
-    words = self.text.gsub(/[^ \w\-]+/, "").split("http")[0].split(" ")
-    spotify_uris = []
-    until words.length == 0
-
-      search_term = words.first(3).join(" ")
-      tracks = RSpotify::Track.search("track:#{search_term}").select {|track| track.available_markets.include?("GB") == true}.sort_by { |track| track.name.length }
-      exact_matches = tracks.select { |track|  track.name.downcase == search_term.downcase }
-      if exact_matches.count > 0
-        spotify_uris << exact_matches[0].uri
-        words = words.drop(3)
-      else
-        search_term = words.first(2).join(" ")
-        tracks = RSpotify::Track.search("track:#{search_term}").sort_by { |track| track.name.length }
-        exact_matches = tracks.select { |track|  track.name.downcase == search_term.downcase }
-        if exact_matches.count > 0
-          spotify_uris << exact_matches[0].uri
-          words = words.drop(2)
-        else
-          if ["a","and","at","is","in","are","to","by","as","your","for","of","be","with"].include?(words[0].strip.downcase) == false
-            tracks = RSpotify::Track.search("track:#{words[0]}").sort_by { |track| track.name.length }
-            if tracks.count > 0
-              exact_matches = tracks.select { |track|  track.name.downcase == words[0].downcase }
-              result = exact_matches.count == 0 ? tracks[0].uri : exact_matches[0].uri
-              spotify_uris << result
-            end
-          end
-          words = words.drop(1)
-        end
-      end
-    end
-
-
-
-    access_token = get_access_token
-    playlist_uri = create_spotify_playlist(self.spotify_user, access_token, self.text, true)
-    replace_spotify_playlist(self.spotify_user, access_token, playlist_uri, spotify_uris)
-    url = "https://open.spotify.com/user/8t759jzmggdm8qpdl79lw1rrs/playlist/#{playlist_uri}"
-    return {original_text: self.text,url: url}
-  end
-
-  def get_refresh_token
-    redirect_uri = "http://localhost:8082/"
-    step_one = RestClient.get 'https://accounts.spotify.com/authorize/', {params: {:client_id => self.spotify_key, :redirect_uri => redirect_uri, :response_type => 'code', :scope => "playlist-modify-private playlist-modify-public playlist-read-private"} }
-    puts step_one.request.url
-    code = gets.split("=")[1][0..-2]
-    puts code
-    begin
-      step_four = RestClient.post 'https://accounts.spotify.com/api/token', {:client_id => self.spotify_key, :client_secret => self.spotify_secret, grant_type: 'authorization_code', code: code, redirect_uri: redirect_uri }
-    rescue RestClient::ExceptionWithResponse => e
-      puts  e.response
-    end
-    puts step_four
-  end
-
-  def get_access_token
-    auth_info = self.spotify_key + ":" + self.spotify_secret
+  def get_access_token(refresh_token)
+    auth_info = @spotify_key + ":" + @spotify_secret
     encoded_auth_info = Base64.strict_encode64(auth_info)
     redirect_uri = "http://localhost:8082/"
     uri = URI.parse("https://accounts.spotify.com/api/token")
@@ -92,7 +28,7 @@ class SpotifyPlaylistFromText
     request["Authorization"] = "Basic " + encoded_auth_info
     request.set_form_data(
     "grant_type" => "refresh_token",
-    "refresh_token" => self.refresh_token
+    "refresh_token" => refresh_token
     )
     req_options = {
     use_ssl: uri.scheme == "https",
@@ -106,15 +42,95 @@ class SpotifyPlaylistFromText
     return JSON.parse(response.body)["access_token"]
   end
 
-  def spotify_api_request(uri,body,access_token,type)
+  def search_for_first_x_words(words, x)
+    search_term = words.first(x).join(" ")
+    puts "search for: #{search_term}"
+    tracks = search_spotify_tracks(search_term).sort_by { |track| track["name"].length }
+    exact_matches = tracks.select { |track|  track["name"].gsub(/[^ \w\-]+/, "").downcase == search_term.downcase }
+    puts "matches #{exact_matches.count}"
+    if exact_matches.count > 0
+      result = exact_matches[0]
+      puts result["name"]
+      @spotify_uris << result["uri"]
+      y = 5
+      y = (words.count - x) if (words.count - x) < 5
+      return { x:y, remaining_words: words.drop(x)}
+    else
+      return { x: x - 1, remaining_words: words}
+    end
+  end
+
+  def get_spotify_tracks
+    words = self.text.gsub(/[^ \w\-]+/, "").split("http")[0].split(" ")
+    puts self.text
+    puts words.count
+    @spotify_uris = []
+    x = 5
+    x = words.count if words.count < 5
+    until words.length == 0
+      if x > 0
+        search = search_for_first_x_words(words, x)
+        puts search
+        words = search[:remaining_words]
+        x = search[:x]
+      else
+        if exclusion_list.include?(words[0].strip.downcase) == false
+          search_term = words.first
+          puts search_term
+          tracks = search_spotify_tracks(search_term).sort_by { |track| track["name"].length }
+          if tracks.count > 0
+            exact_matches = tracks.select { |track|  track["name"].gsub(/[^ \w\-]+/, "").downcase == search_term.downcase }
+            puts exact_matches.count
+            result = exact_matches.count == 0 ? tracks[0] : exact_matches[0]
+            puts result["name"]
+            @spotify_uris << result["uri"]
+          end
+        end
+        words = words.drop(1)
+        x = 5
+        x = words.count if words.count < 5
+      end
+
+
+    end
+    return @spotify_uris
+  end
+
+  def spotify_playlist_build
+    spotify_uris = get_spotify_tracks
+    playlist_uri = create_spotify_playlist(@spotify_user, self.text, true)
+    replace_spotify_playlist(@spotify_user, playlist_uri, spotify_uris)
+    url = "https://open.spotify.com/user/#{@spotify_user}/playlist/#{playlist_uri}"
+    return {original_text: self.text,url: url}
+  end
+
+  def get_refresh_token
+    redirect_uri = "http://localhost:8082/"
+    step_one = RestClient.get 'https://accounts.spotify.com/authorize/', {params: {:client_id => @spotify_key, :redirect_uri => redirect_uri, :response_type => 'code', :scope => "playlist-modify-private playlist-modify-public playlist-read-private"} }
+    puts step_one.request.url
+    code = gets.split("=")[1][0..-2]
+    puts code
+    begin
+      step_four = RestClient.post 'https://accounts.spotify.com/api/token', {:client_id => @spotify_key, :client_secret => @spotify_secret, grant_type: 'authorization_code', code: code, redirect_uri: redirect_uri }
+    rescue RestClient::ExceptionWithResponse => e
+      puts  e.response
+    end
+    puts step_four
+  end
+
+
+
+  def spotify_api_request(uri,body,type)
     uri = URI.parse(uri)
     if type == "post"
       request = Net::HTTP::Post.new(uri)
     elsif type == "put"
       request = Net::HTTP::Put.new(uri)
+    elsif type == "get"
+      request = Net::HTTP::Get.new(uri)
     end
     request.content_type = "application/json"
-    request["Authorization"] = "Bearer #{access_token}"
+    request["Authorization"] = "Bearer #{@access_token}"
     request.body = JSON.dump(body)
 
     req_options = {
@@ -126,27 +142,42 @@ class SpotifyPlaylistFromText
     end
   end
 
-  def replace_spotify_playlist(user_name, access_token, playlist_uri, tracks)
+  def replace_spotify_playlist(user_name, playlist_uri, tracks)
     uri = "https://api.spotify.com/v1/users/#{user_name}/playlists/#{playlist_uri}/tracks"
     body = {
         "uris" => tracks
       }
 
-    response = spotify_api_request(uri, body, access_token, "put")
+    response = spotify_api_request(uri, body, "put")
 
     return JSON.parse(response.body)["uri"]
   end
 
 
-  def create_spotify_playlist(user_name, access_token, playlist_name, public)
+  def create_spotify_playlist(user_name, playlist_name, public)
     uri = "https://api.spotify.com/v1/users/#{user_name}/playlists"
     body = {
         "name" => playlist_name,
         "public" => public
       }
-    response = spotify_api_request(uri, body, access_token, "post")
+    response = spotify_api_request(uri, body, "post")
 
 
     return JSON.parse(response.body)["uri"].to_s.split(":")[4]
+  end
+
+  def search_spotify_tracks(query)
+    formatted_query = query.gsub(" ","%20").downcase
+    if formatted_query.to_s != ""
+      limit = 50
+      offset = 0
+      market = "GB"
+      type = "track"
+      body = nil
+      uri = "https://api.spotify.com/v1/search/?q=track:#{formatted_query}&limit=#{limit}&offset=#{offset}&type=#{type}&market=#{market}"
+      response = spotify_api_request(uri, body, "get")
+      puts JSON.parse(response.body)["tracks"]["items"].count
+      return JSON.parse(response.body)["tracks"]["items"]
+    end
   end
 end
