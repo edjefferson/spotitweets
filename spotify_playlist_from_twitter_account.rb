@@ -39,7 +39,7 @@ class SpotifyPlaylistFromTwitterAccount
     @client.update(tweet)
   end
 
-  def if_tweet(source_user_id, tweet)
+  def if_tweet(original_id, object)
     if object.is_a?(Twitter::Tweet) && object.user.id == original_id && object.to_h[:retweeted_status] == nil
       puts object.text
       tweet_to_playlist(object.text)

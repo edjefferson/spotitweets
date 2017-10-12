@@ -75,7 +75,7 @@ class SpotifyPlaylistFromText
       search_term = words.first
       results = search_results(search_term)
       result = results[:exact_matches].count == 0 ? results[:tracks][0] : results[:exact_matches][0]
-      @spotify_uris << result["uri"]
+      @spotify_uris << result["uri"] if result != nil
     end
     y = 5
     y = (words.count - 1) if (words.count - 1) < 5
