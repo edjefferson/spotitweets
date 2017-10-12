@@ -8,4 +8,4 @@ test = SpotifyPlaylistFromText.new(text,ENV["SPOTIFY_USER"],
   ENV["SPOTIFY_SECRET"])
 
 
-puts test.spotify_playlist_build
+puts test.get_spotify_tracks

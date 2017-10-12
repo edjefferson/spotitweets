@@ -8,7 +8,7 @@ class SpotifyPlaylistFromText
     @spotify_user = spotify_user
     @spotify_key = spotify_key
     @spotify_secret = spotify_secret
-    @access_token = get_access_token(refresh_token)
+    @access_token = get_access_token(refresh_token,"http://localhost:8082/")
   end
 
   def text
@@ -19,10 +19,11 @@ class SpotifyPlaylistFromText
     ["a","and","at","is","in","are","to","by","as","your","for","of","be","with","was"]
   end
 
+  def encoded_auth_info
+    Base64.strict_encode64(@spotify_key + ":" + @spotify_secret)
+  end
+
   def get_access_token(refresh_token)
-    auth_info = @spotify_key + ":" + @spotify_secret
-    encoded_auth_info = Base64.strict_encode64(auth_info)
-    redirect_uri = "http://localhost:8082/"
     uri = URI.parse("https://accounts.spotify.com/api/token")
     request = Net::HTTP::Post.new(uri)
     request["Authorization"] = "Basic " + encoded_auth_info
@@ -35,22 +36,31 @@ class SpotifyPlaylistFromText
     }
 
     response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
-
       http.request(request)
     end
 
     return JSON.parse(response.body)["access_token"]
   end
 
+  def search_results(search_term)
+    puts "search for: #{search_term}"
+    tracks = search_spotify_tracks(search_term)
+    if tracks != nil
+      tracks.sort_by! { |track| track["name"].length }
+      exact_matches = tracks.select { |track|  track["name"].gsub(/[^ \w\-]+/, "").downcase == search_term.downcase }
+      puts "matches #{exact_matches.count}"
+    else
+      exact_matches = []
+    end
+    return {tracks: tracks, exact_matches: exact_matches}
+  end
+
+
   def search_for_first_x_words(words, x)
     search_term = words.first(x).join(" ")
-    puts "search for: #{search_term}"
-    tracks = search_spotify_tracks(search_term).sort_by { |track| track["name"].length }
-    exact_matches = tracks.select { |track|  track["name"].gsub(/[^ \w\-]+/, "").downcase == search_term.downcase }
-    puts "matches #{exact_matches.count}"
-    if exact_matches.count > 0
-      result = exact_matches[0]
-      puts result["name"]
+    results = search_results(search_term)
+    if results[:exact_matches].count > 0
+      result = results[:exact_matches][0]
       @spotify_uris << result["uri"]
       y = 5
       y = (words.count - x) if (words.count - x) < 5
@@ -58,6 +68,18 @@ class SpotifyPlaylistFromText
     else
       return { x: x - 1, remaining_words: words}
     end
+  end
+
+  def search_for_first_word(words)
+    if exclusion_list.include?(words[0].strip.downcase) == false
+      search_term = words.first
+      results = search_results(search_term)
+      result = results[:exact_matches].count == 0 ? results[:tracks][0] : results[:exact_matches][0]
+      @spotify_uris << result["uri"]
+    end
+    y = 5
+    y = (words.count - 1) if (words.count - 1) < 5
+    return { x: y, remaining_words: words.drop(1)}
   end
 
   def get_spotify_tracks
@@ -68,29 +90,13 @@ class SpotifyPlaylistFromText
     x = 5
     x = words.count if words.count < 5
     until words.length == 0
-      if x > 0
+      if x > 1
         search = search_for_first_x_words(words, x)
-        puts search
-        words = search[:remaining_words]
-        x = search[:x]
       else
-        if exclusion_list.include?(words[0].strip.downcase) == false
-          search_term = words.first
-          puts search_term
-          tracks = search_spotify_tracks(search_term).sort_by { |track| track["name"].length }
-          if tracks.count > 0
-            exact_matches = tracks.select { |track|  track["name"].gsub(/[^ \w\-]+/, "").downcase == search_term.downcase }
-            puts exact_matches.count
-            result = exact_matches.count == 0 ? tracks[0] : exact_matches[0]
-            puts result["name"]
-            @spotify_uris << result["uri"]
-          end
-        end
-        words = words.drop(1)
-        x = 5
-        x = words.count if words.count < 5
+        search = search_for_first_word(words)
       end
-
+      words = search[:remaining_words]
+      x = search[:x]
 
     end
     return @spotify_uris
