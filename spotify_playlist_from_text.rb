@@ -70,11 +70,31 @@ class SpotifyPlaylistFromText
     end
   end
 
+  def get_best_fit(tracks, search_term)
+    while true do
+      term_at_start = tracks.select {|track| track["name"].downcase.start_with?(search_term.downcase) }
+      puts search_term
+      if term_at_start.count > 0
+        best_fit = term_at_start[0]
+        break
+      end
+
+      term_included = tracks.select {|track| track["name"].downcase.include?(search_term.downcase) }
+      if term_included.count > 0
+        best_fit = term_included[0]
+        break
+      end
+      best_fit = tracks[0]
+    end
+    puts best_fit["name"]
+    return best_fit
+  end
+
   def search_for_first_word(words)
     if exclusion_list.include?(words[0].strip.downcase) == false
       search_term = words.first
       results = search_results(search_term)
-      result = results[:exact_matches].count == 0 ? results[:tracks][0] : results[:exact_matches][0]
+      result = results[:exact_matches].count == 0 ? get_best_fit(results[:tracks], search_term) : results[:exact_matches][0]
       @spotify_uris << result["uri"] if result != nil
     end
     y = 5
@@ -88,11 +108,7 @@ class SpotifyPlaylistFromText
     x = 5
     x = words.count if words.count < 5
     until words.length == 0
-      if x > 1
-        search = search_for_first_x_words(words, x)
-      else
-        search = search_for_first_word(words)
-      end
+      x > 1 ? search = search_for_first_x_words(words, x) : search = search_for_first_word(words)
       words = search[:remaining_words]
       x = search[:x]
     end
