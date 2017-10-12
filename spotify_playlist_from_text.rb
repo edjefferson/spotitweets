@@ -1,9 +1,11 @@
 require 'base64'
 require 'net/http'
 require 'json'
+require './spotify_api_connection'
 
 class SpotifyPlaylistFromText
   def initialize(text, spotify_user, refresh_token, spotify_key, spotify_secret)
+    @spotifyapi = SpotifyApiConnection.new(spotify_user, refresh_token, spotify_key, spotify_secret)
     @text = text
     @spotify_user = spotify_user
     @spotify_key = spotify_key
